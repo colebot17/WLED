@@ -7323,6 +7323,20 @@ uint16_t mode_waterfall(void) {                   // Waterfall. By: Andrew Tulin
 static const char _data_FX_MODE_WATERFALL[] PROGMEM = "Waterfall@!,Adjust color,Select bin,Volume (min);!,!;!;01f;c2=0,m12=2,si=0"; // Circles, Beatsin
 
 
+/////////////////////////
+//   ** BEAT FLASH     //
+/////////////////////////
+uint16_t mode_beat_flash(void) { // By Cole Ruth.
+  uint32_t color = SEGMENT.color_from_palette(0, true, true, 0);
+  for (int i = 0; i < SEGLEN; i++) {
+    SEGMENT.setPixelColor(i, color);
+  }
+
+  return FRAMETIME;
+}
+static const char _data_FX_MODE_BEAT_FLASH[] PROGMEM = "Beat Flash@!,!;!,!;!;01f;";
+
+
 #ifndef WLED_DISABLE_2D
 /////////////////////////
 //     ** 2D GEQ       //
@@ -7974,6 +7988,8 @@ void WS2812FX::setupEffectData() {
 
   addEffect(FX_MODE_WAVESINS, &mode_wavesins, _data_FX_MODE_WAVESINS);
   addEffect(FX_MODE_ROCKTAVES, &mode_rocktaves, _data_FX_MODE_ROCKTAVES);
+
+  addEffect(FX_MODE_BEAT_FLASH, &mode_beat_flash, _data_FX_MODE_BEAT_FLASH);
 
   // --- 2D  effects ---
 #ifndef WLED_DISABLE_2D
