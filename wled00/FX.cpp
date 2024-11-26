@@ -893,7 +893,7 @@ static uint16_t chase(uint32_t color1, uint32_t color2, uint32_t color3, bool do
   }
 
   // set fading pixels on each border (if smooth enabled)
-  if (SEGMENT.check2) {
+  if (SEGMENT.check1) {
     SEGMENT.setPixelColor(a, color_blend(color2, color1, progress, true));
     SEGMENT.setPixelColor(b, color_blend(color3, color2, progress, true));
     SEGMENT.setPixelColor(c, color_blend(color1, color3, progress, true));
@@ -909,7 +909,7 @@ static uint16_t chase(uint32_t color1, uint32_t color2, uint32_t color3, bool do
 uint16_t mode_chase_color(void) {
   return chase(SEGCOLOR(1), (SEGCOLOR(2)) ? SEGCOLOR(2) : SEGCOLOR(0), SEGCOLOR(0), true);
 }
-static const char _data_FX_MODE_CHASE_COLOR[] PROGMEM = "Chase@!,Width,,,,,Smooth;!,!,!;!";
+static const char _data_FX_MODE_CHASE_COLOR[] PROGMEM = "Chase@!,Width,,,,Smooth;!,!,!;!";
 
 
 /*
@@ -918,7 +918,7 @@ static const char _data_FX_MODE_CHASE_COLOR[] PROGMEM = "Chase@!,Width,,,,,Smoot
 uint16_t mode_chase_random(void) {
   return chase(SEGCOLOR(1), (SEGCOLOR(2)) ? SEGCOLOR(2) : SEGCOLOR(0), SEGCOLOR(0), false);
 }
-static const char _data_FX_MODE_CHASE_RANDOM[] PROGMEM = "Chase Random@!,Width,,,,,Smooth;!,,!;!";
+static const char _data_FX_MODE_CHASE_RANDOM[] PROGMEM = "Chase Random@!,Width,,,,Smooth;!,,!;!";
 
 
 /*
@@ -932,7 +932,7 @@ uint16_t mode_chase_rainbow(void) {
 
   return chase(color, SEGCOLOR(0), SEGCOLOR(1), false);
 }
-static const char _data_FX_MODE_CHASE_RAINBOW[] PROGMEM = "Chase Rainbow@!,Width,,,,,Smooth;!,!;!";
+static const char _data_FX_MODE_CHASE_RAINBOW[] PROGMEM = "Chase Rainbow@!,Width,,,,Smooth;!,!;!";
 
 
 /*
@@ -946,7 +946,7 @@ uint16_t mode_chase_rainbow_white(void) {
 
   return chase(SEGCOLOR(0), color2, color3, false);
 }
-static const char _data_FX_MODE_CHASE_RAINBOW_WHITE[] PROGMEM = "Rainbow Runner@!,Size,,,,,Smooth;Bg;!";
+static const char _data_FX_MODE_CHASE_RAINBOW_WHITE[] PROGMEM = "Rainbow Runner@!,Size,,,,Smooth;Bg;!";
 
 
 /*
@@ -1559,15 +1559,24 @@ static const char _data_FX_MODE_FAIRYTWINKLE[] PROGMEM = "Fairytwinkle@!,!;!,!;!
 uint16_t tricolor_chase(uint32_t color1, uint32_t color2) {
   uint32_t cycleTime = 50 + ((255 - SEGMENT.speed)<<1);
   uint32_t it = strip.now / cycleTime;  // iterator
+  uint16_t blend = map(strip.now % cycleTime, 0, cycleTime-1, 0x0000, 0xFFFF);
   unsigned width = (1 + (SEGMENT.intensity>>4)); // value of 1-16 for each colour
   unsigned index = it % (width*3);
 
   for (int i = 0; i < SEGLEN; i++, index++) {
+    uint32_t paletteColor = SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 1);
+
     if (index > (width*3)-1) index = 0;
 
     uint32_t color = color1;
-    if (index > (width<<1)-1) color = SEGMENT.color_from_palette(i, true, PALETTE_SOLID_WRAP, 1);
+    if (index > (width<<1)-1) color = paletteColor;
     else if (index > width-1) color = color2;
+
+    if (SEGENV.check1) {
+      if (index == 0)            color = color_blend(paletteColor, color1, blend, true);
+      if (index == width-1)      color = color_blend(color1, color2, blend, true);
+      if (index == (width<<1)-1) color = color_blend(color2, paletteColor, blend, true);
+    }
 
     SEGMENT.setPixelColor(SEGLEN - i -1, color);
   }
@@ -1581,7 +1590,7 @@ uint16_t tricolor_chase(uint32_t color1, uint32_t color2) {
 uint16_t mode_tricolor_chase(void) {
   return tricolor_chase(SEGCOLOR(2), SEGCOLOR(0));
 }
-static const char _data_FX_MODE_TRICOLOR_CHASE[] PROGMEM = "Chase 3@!,Size;1,2,3;!";
+static const char _data_FX_MODE_TRICOLOR_CHASE[] PROGMEM = "Chase 3@!,Size,,,,Smooth;1,2,3;!";
 
 
 /*
