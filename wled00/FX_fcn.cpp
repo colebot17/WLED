@@ -687,6 +687,21 @@ uint16_t IRAM_ATTR Segment::virtualLength() const {
 
 void IRAM_ATTR_YN Segment::setPixelColor(int i, uint32_t col)
 {
+  if (mask) {
+    uint8_t maskVal = std::max({
+      (col>>16) & 0xFF,
+      (col>>8)  & 0xFF,
+       col      & 0xFF
+    });
+
+    // uint32_t currCol = getPixelColor(i);
+    // col = color_blend(0x000000, currCol, maskVal, false);
+
+    // if (col != 0x000000) return;
+
+    col = color_fade(getPixelColor(i), ~maskVal);
+  }
+
   if (!isActive()) return; // not active
 #ifndef WLED_DISABLE_2D
   int vStrip = i>>16; // hack to allow running on virtual strips (2D segment columns/rows)

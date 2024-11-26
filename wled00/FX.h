@@ -334,7 +334,7 @@ typedef struct Segment {
     uint8_t  palette;
     uint8_t  mode;
     union {
-      uint16_t options; //bit pattern: msb first: [transposed mirrorY reverseY] transitional (tbd) paused needspixelstate mirrored on reverse selected
+      uint32_t options; //bit pattern: msb first: [transposed mirrorY reverseY] transitional (tbd) paused needspixelstate mirrored on reverse selected
       struct {
         bool    selected    : 1;  //     0 : selected
         bool    reverse     : 1;  //     1 : reversed
@@ -345,9 +345,10 @@ typedef struct Segment {
         bool    reverse_y   : 1;  //     6 : reversed Y (2D)
         bool    mirror_y    : 1;  //     7 : mirrored Y (2D)
         bool    transpose   : 1;  //     8 : transposed (2D, swapped X & Y)
-        uint8_t map1D2D     : 3;  //  9-11 : mapping for 1D effect on 2D (0-use as strip, 1-expand vertically, 2-circular/arc, 3-rectangular/corner, ...)
-        uint8_t soundSim    : 2;  // 12-13 : 0-3 sound simulation types ("soft" & "hard" or "on"/"off")
-        uint8_t set         : 2;  // 14-15 : 0-3 UI segment sets/groups
+        uint8_t mask        : 1;  //     9 : is a mask
+        uint8_t map1D2D     : 3;  // 10-12 : mapping for 1D effect on 2D (0-use as strip, 1-expand vertically, 2-circular/arc, 3-rectangular/corner, ...)
+        uint8_t soundSim    : 2;  // 13-14 : 0-3 sound simulation types ("soft" & "hard" or "on"/"off")
+        uint8_t set         : 2;  // 15-16 : 0-3 UI segment sets/groups
       };
     };
     uint8_t  grouping, spacing;

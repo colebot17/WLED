@@ -213,6 +213,7 @@ bool deserializeSegment(JsonObject elem, byte it, byte presetId)
   seg.selected  = getBoolVal(elem["sel"], seg.selected);
   seg.reverse   = getBoolVal(elem["rev"], seg.reverse);
   seg.mirror    = getBoolVal(elem["mi"] , seg.mirror);
+  seg.mask      = getBoolVal(elem["msk"], seg.mask);
   #ifndef WLED_DISABLE_2D
   bool reverse_y = seg.reverse_y;
   bool mirror_y  = seg.mirror_y;
@@ -567,6 +568,7 @@ void serializeSegment(JsonObject& root, Segment& seg, byte id, bool forPreset, b
   root["sel"] = seg.isSelected();
   root["rev"] = seg.reverse;
   root["mi"]  = seg.mirror;
+  root["msk"] = seg.mask;
   #ifndef WLED_DISABLE_2D
   if (strip.isMatrix) {
     root["rY"] = seg.reverse_y;
