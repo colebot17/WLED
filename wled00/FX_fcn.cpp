@@ -842,8 +842,11 @@ void IRAM_ATTR_YN Segment::setPixelColor(int i, uint32_t col)
 #ifndef WLED_DISABLE_MODE_BLEND
         if (_modeBlend) tmpCol = color_blend(_masked ? _mask_buffer[indexMir] : strip.getPixelColor(indexMir), col, 0xFFFFU - progress(), true);
 #endif
-        if (_masked) _mask_buffer[indexMir] = tmpCol;
-        else         strip.setPixelColor(indexMir, tmpCol);
+        if (_masked) {
+          _mask_buffer[indexMir] = tmpCol;
+        } else {
+          strip.setPixelColor(indexMir, tmpCol);
+        }
       }
       indexSet += offset; // offset/phase
       if (indexSet >= stop) indexSet -= len; // wrap
@@ -890,6 +893,10 @@ void Segment::setPixelColor(float i, uint32_t col, bool aa)
   }
 }
 #endif
+
+void Segment::setBufferPixel(int i, uint32_t col) {
+  _mask_buffer
+}
 
 uint32_t IRAM_ATTR_YN Segment::getPixelColor(int i) const
 {
@@ -1341,8 +1348,9 @@ void WS2812FX::service() {
         willBeMasked = true;
 
         // create the buffer array and store its ptr in seg data
-        seg._mask_buffer_size = seg.length(); // may need to be a different length function
-        seg._mask_buffer      = new uint32_t[seg._mask_buffer_size];
+        seg._mask_buffer = new uint32_t[seg.length()];
+        // seg._mask_buffer = std::make_unique<uint32_t[]>(seg.length());
+        // seg._mask_buffer = std::vector<uint32_t> data(seg.length());
       };
     }
 
@@ -1401,9 +1409,8 @@ void WS2812FX::service() {
         segment &prev_seg = *prev_it;
         
         if (seg.mask) {
-          delete prev_seg._mask_buffer;
+          delete[] prev_seg._mask_buffer;
           prev_seg._mask_buffer = nullptr;
-          prev_seg._mask_buffer_size = 0;
         }
       }
 

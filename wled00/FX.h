@@ -376,7 +376,6 @@ typedef struct Segment {
     static uint16_t maxWidth, maxHeight;  // these define matrix width & height (max. segment dimensions)
 
     uint32_t* _mask_buffer;
-    size_t    _mask_buffer_size;
 
     bool _masked;
 
