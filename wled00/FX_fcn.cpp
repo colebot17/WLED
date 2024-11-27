@@ -688,18 +688,13 @@ uint16_t IRAM_ATTR Segment::virtualLength() const {
 void IRAM_ATTR_YN Segment::setPixelColor(int i, uint32_t col)
 {
   if (mask) {
-    uint8_t maskVal = std::max({
+    uint8_t maskAmt = std::max({
       (col>>16) & 0xFF,
       (col>>8)  & 0xFF,
        col      & 0xFF
     });
 
-    // uint32_t currCol = getPixelColor(i);
-    // col = color_blend(0x000000, currCol, maskVal, false);
-
-    // if (col != 0x000000) return;
-
-    col = color_fade(getPixelColor(i), ~maskVal);
+    col = color_blend(getPixelColor(i), _mask_buffer[i], maskAmt, false);
   }
 
   if (!isActive()) return; // not active
@@ -845,16 +840,18 @@ void IRAM_ATTR_YN Segment::setPixelColor(int i, uint32_t col)
         indexMir += offset; // offset/phase
         if (indexMir >= stop) indexMir -= len; // wrap
 #ifndef WLED_DISABLE_MODE_BLEND
-        if (_modeBlend) tmpCol = color_blend(strip.getPixelColor(indexMir), col, 0xFFFFU - progress(), true);
+        if (_modeBlend) tmpCol = color_blend(_masked ? _mask_buffer[indexMir] : strip.getPixelColor(indexMir), col, 0xFFFFU - progress(), true);
 #endif
-        strip.setPixelColor(indexMir, tmpCol);
+        if (_masked) _mask_buffer[indexMir] = tmpCol;
+        else         strip.setPixelColor(indexMir, tmpCol);
       }
       indexSet += offset; // offset/phase
       if (indexSet >= stop) indexSet -= len; // wrap
 #ifndef WLED_DISABLE_MODE_BLEND
       if (_modeBlend) tmpCol = color_blend(strip.getPixelColor(indexSet), col, 0xFFFFU - progress(), true);
 #endif
-      strip.setPixelColor(indexSet, tmpCol);
+      if (_masked) _mask_buffer[indexSet] = tmpCol;
+      else         strip.setPixelColor(indexSet, tmpCol);
     }
   }
 }
@@ -1330,8 +1327,24 @@ void WS2812FX::service() {
   _isServicing = true;
   _segment_index = 0;
 
-  for (segment &seg : _segments) {
+  // for (segment &seg : _segments) {
+  for (auto it = _segments.begin(); it != _segments.end(); ++it) {
+    segment &seg = *it;
+    
     if (_suspend) return; // immediately stop processing segments if suspend requested during service()
+
+    bool willBeMasked = false;
+    auto next_it = std::next(it);
+    if (next_it != _segments.end()) {
+      segment &next_seg = *next_it;
+      if (next_seg.mask) {
+        willBeMasked = true;
+
+        // create the buffer array and store its ptr in seg data
+        seg._mask_buffer_size = seg.length(); // may need to be a different length function
+        seg._mask_buffer      = new uint32_t[seg._mask_buffer_size];
+      };
+    }
 
     // process transition (mode changes in the middle of transition)
     seg.handleTransition();
@@ -1380,6 +1393,18 @@ void WS2812FX::service() {
         seg.call++;
         if (seg.isInTransition() && frameDelay > FRAMETIME) frameDelay = FRAMETIME; // force faster updates during transition
         BusManager::setSegmentCCT(oldCCT); // restore old CCT for ABL adjustments
+      }
+
+      // free up buffer memory
+      if (it != _segments.begin()) {
+        auto prev_it = std::prev(it);
+        segment &prev_seg = *prev_it;
+        
+        if (seg.mask) {
+          delete prev_seg._mask_buffer;
+          prev_seg._mask_buffer = nullptr;
+          prev_seg._mask_buffer_size = 0;
+        }
       }
 
       seg.next_time = nowUp + frameDelay;
