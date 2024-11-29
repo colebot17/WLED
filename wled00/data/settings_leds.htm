@@ -577,6 +577,7 @@ Swap: <select id="xw${s}" name="XW${s}">
 		}
 		function addCCol(col) {
 			var i = gEBCN('ccol_entry').length;
+			if (i>=maxCC) return;
 			var s = String.fromCharCode((i<10?48:55)+i);
 			if (!col) col = [
 				Math.floor(Math.random() * 256),
