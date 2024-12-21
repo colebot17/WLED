@@ -126,10 +126,10 @@ void onAlexaChange(EspalexaDevice* dev)
       } else {
         colorKtoRGB(k, rgbw);
       }
-      strip.getMainSegment().setColor(0, RGBW32(rgbw[0], rgbw[1], rgbw[2], rgbw[3]));
+      strip.setColor(0, RGBW32(rgbw[0], rgbw[1], rgbw[2], rgbw[3]));
     } else {
       uint32_t color = dev->getRGB();
-      strip.getMainSegment().setColor(0, color);
+      strip.setColor(0, color);
     }
     stateUpdated(CALL_MODE_ALEXA);
   }
