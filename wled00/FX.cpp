@@ -7184,52 +7184,28 @@ static const char _data_FX_MODE_WATERFALL[] PROGMEM = "Waterfall@!,Adjust color,
 /////////////////////////
 //   ** BEAT FLASH     //
 /////////////////////////
-uint16_t mode_beat_flash(void) { // By Cole Ruth. (def not chatgpt)
+uint16_t mode_beat_flash(void) { // By Cole Ruth.
+  // gravcenter but every time the bar would push the top led up it flashes
 
-  static uint32_t lastFlashTime = 0;                  // Track the last flash time for cooldown.
-  static float dynamicThreshold = 0;                  // Adaptive threshold.
-  static float avgVolume = 0;                         // Average volume tracker.
+  SEGMENT.fade_out(SEGMENT.custom1);
 
-  // Retrieve audio-reactive data from usermods or simulate if unavailable.
-  um_data_t *um_data;
-  if (!usermods.getUMData(&um_data, USERMOD_ID_AUDIOREACTIVE)) {
-    um_data = simulateSound(SEGMENT.soundSim);
-  }
+  um_data_t *um_data = getAudioData();
+  float volumeSmth = *(float*) um_data->u_data[0];
 
-  // Extract relevant audio data.
-  uint8_t samplePeak = *(uint8_t*)um_data->u_data[3];   // Indicates a peak/beat.
-  float volumeSmth = *(float*)um_data->u_data[0];       // Smoothed volume.
-  uint8_t *maxVol = (uint8_t*)um_data->u_data[6];       // Max volume reference.
+  float segmentSampleAvg = (volumeSmth * (float)SEGMENT.intensity / 255.0f) * 0.25;
+  float mySampleAvg = mapf(segmentSampleAvg*2.0, 0, 64, 0, (SEGLEN-1));
+  int tempsamp = constrain(mySampleAvg, 0, SEGLEN-1);
 
-  // Define fade rate based on speed. Faster speed = quicker fade out.
-  uint8_t fadeVal = map(SEGMENT.speed, 0, 255, 224, 254);
-
-  // Set the whole strip to fade out gradually in between beats.
-  SEGMENT.fade_out(fadeVal);
-
-  // Update the average volume (for dynamic threshold adjustment).
-  avgVolume = (avgVolume * 0.9) + (volumeSmth * 0.1);  // Smoothly average volume over time.
-
-  // Adjust threshold dynamically based on average volume.
-  dynamicThreshold = avgVolume + (*maxVol * 0.1);      // Keep threshold slightly above avgVolume.
-
-  uint8_t timeSlider = map(SEGMENT.intensity, 0, 255, 0, 750);
-
-  // Cooldown timer: only flash if at least 500ms has passed since the last flash.
-  uint32_t now = millis();
-  if (now - lastFlashTime > timeSlider && samplePeak == 1 && volumeSmth > dynamicThreshold) {
-    lastFlashTime = now;  // Update last flash time.
-
-    // Set the color for the entire strip.
-    uint32_t color = SEGMENT.color_from_palette(millis(), false, PALETTE_SOLID_WRAP, 0);
+  if (tempsamp >= SEGENV.aux0) {
+    SEGENV.aux0 = tempsamp;
     for (int i = 0; i < SEGLEN; i++) {
-      SEGMENT.setPixelColor(i, color);
+      SEGMENT.setPixelColor(i, SEGCOLOR(0));
     }
-  }
+  } else if (strip.now % (256-SEGMENT.speed) == 0) SEGENV.aux0--;
 
   return FRAMETIME;
 }
-static const char _data_FX_MODE_BEAT_FLASH[] PROGMEM = "Beat Flash@!,!;!,!;!;01f;";
+static const char _data_FX_MODE_BEAT_FLASH[] PROGMEM = "Beat Flash@Fall Rate,Sensitivity,Fade Rate;!,!;!;01v;sx=0,ix=247,c1=247";
 
 
 #ifndef WLED_DISABLE_2D
